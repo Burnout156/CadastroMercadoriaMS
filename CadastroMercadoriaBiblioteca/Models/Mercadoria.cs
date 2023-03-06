@@ -26,5 +26,7 @@ namespace CadastroMercadoriaBiblioteca.Models
         [Required(ErrorMessage = "O tipo da descrição é obrigatório.")]
         [StringLength(50, ErrorMessage = "O tipo da descrição deve ter no máximo 50 caracteres.")]
         public string TipoDescricao { get; set; }
+
+        public bool Ativo { get; set; }
     }
 }

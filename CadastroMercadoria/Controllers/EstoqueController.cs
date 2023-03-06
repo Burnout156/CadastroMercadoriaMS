@@ -9,6 +9,10 @@ using CadastroMercadoriaBiblioteca.Data;
 using CadastroMercadoriaBiblioteca.Models;
 using System.Data;
 using System.Globalization;
+using System.Drawing.Printing;
+using System.Xml.Linq;
+using iTextSharp.text.pdf;
+using iTextSharp.text;
 
 namespace CadastroMercadoria.Controllers
 {
@@ -24,7 +28,11 @@ namespace CadastroMercadoria.Controllers
         // GET: Estoque
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Mercadorias.ToListAsync());
+            var mercadorias = await _context.Mercadorias
+                .Where(m => m.Ativo) // filtro para pegar apenas as mercadorias ativas
+                .ToListAsync();
+
+            return View(mercadorias);
         }
 
         // GET: Estoque/Details/5
@@ -95,6 +103,55 @@ namespace CadastroMercadoria.Controllers
             return View();
         }
 
+        public IActionResult ExportarRelatorioMensal()
+        {
+            var entradas = _context.Entradas.Include(e => e.Mercadoria).ToList();
+            var saidas = _context.Saidas.Include(s => s.Mercadoria).ToList();
+
+            var pdfDoc = new Document(PageSize.A4, 50, 50, 25, 25);
+            var ms = new MemoryStream();
+            var writer = PdfWriter.GetInstance(pdfDoc, ms);
+
+            pdfDoc.Open();
+
+            // Cria um parágrafo para o título do relatório
+            var titulo = new Paragraph("Relatório Mensal de Entradas e Saídas");
+            titulo.Alignment = Element.ALIGN_CENTER;
+            pdfDoc.Add(titulo);
+
+            // Adiciona uma tabela com as entradas e saídas de cada mercadoria
+            var table = new PdfPTable(5);
+            table.WidthPercentage = 100;
+
+            table.AddCell(new PdfPCell(new Phrase("Mercadoria")) { HorizontalAlignment = Element.ALIGN_CENTER });
+            table.AddCell(new PdfPCell(new Phrase("Número de registro")) { HorizontalAlignment = Element.ALIGN_CENTER });
+            table.AddCell(new PdfPCell(new Phrase("Quantidade de Entradas")) { HorizontalAlignment = Element.ALIGN_CENTER });
+            table.AddCell(new PdfPCell(new Phrase("Quantidade de Saídas")) { HorizontalAlignment = Element.ALIGN_CENTER });
+            table.AddCell(new PdfPCell(new Phrase("Saldo")) { HorizontalAlignment = Element.ALIGN_CENTER });
+
+            var mercadorias = entradas.Select(e => e.Mercadoria).Union(saidas.Select(s => s.Mercadoria)).Distinct();
+
+            foreach (var mercadoria in mercadorias)
+            {
+                var entradaTotal = entradas.Where(e => e.Mercadoria == mercadoria).Sum(e => e.Quantidade);
+                var saidaTotal = saidas.Where(s => s.Mercadoria == mercadoria).Sum(s => s.Quantidade);
+                var saldo = entradaTotal - saidaTotal;
+
+                table.AddCell(new PdfPCell(new Phrase(mercadoria.Nome)));
+                table.AddCell(new PdfPCell(new Phrase(mercadoria.NumeroRegistro.ToString())) { HorizontalAlignment = Element.ALIGN_CENTER });
+                table.AddCell(new PdfPCell(new Phrase(entradaTotal.ToString())) { HorizontalAlignment = Element.ALIGN_CENTER });
+                table.AddCell(new PdfPCell(new Phrase(saidaTotal.ToString())) { HorizontalAlignment = Element.ALIGN_CENTER });
+                table.AddCell(new PdfPCell(new Phrase(saldo.ToString())) { HorizontalAlignment = Element.ALIGN_CENTER });
+            }
+
+            pdfDoc.Add(table);
+
+            pdfDoc.Close();
+
+            var nomeArquivo = "RelatorioMensal.pdf";
+            return File(ms.ToArray(), "application/pdf", nomeArquivo);
+        }
+
         // POST: Estoque/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -103,30 +160,68 @@ namespace CadastroMercadoria.Controllers
         public async Task<IActionResult> Create([Bind("Id,Nome,NumeroRegistro,Fabricante,TipoDescricao")] Mercadoria mercadoria)
         {
 
-
             if (ModelState.IsValid)
             {
                 DateTime dataHoraLocal = DateTime.Now;
 
-                var entradas = new Entrada
+                var mercadoriaExiste = await _context.Mercadorias.Where(m => m.NumeroRegistro == mercadoria.NumeroRegistro).ToListAsync();
+
+                if (mercadoriaExiste != null)
                 {
-                    Quantidade = 1,
-                    DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
-                    Local = "Brazil",
-                    MercadoriaId = mercadoria.Id,
-                };
+                    var entradas = new Entrada
+                    {
+                        Quantidade = 1,
+                        DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                        Local = "Brazil",
+                        MercadoriaId = mercadoriaExiste[0].Id,
+                    };
 
-                entradas.Mercadoria = mercadoria;
+                    _context.Add(entradas);
+                    _context.Entradas.Add(entradas);
 
-                _context.Add(entradas);
+                    if (!MercadoriaRegistroExists(mercadoria.NumeroRegistro))
+                    {
+                        entradas.Mercadoria = mercadoria;
+                        mercadoria.Ativo = true;
+                        _context.Add(mercadoria);
+                    }
+                    else
+                    {
+                        mercadoria.Ativo = true;
+                    }
 
-                if (MercadoriaRegistroExists(mercadoria.NumeroRegistro))
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+
+                else
                 {
-                    _context.Add(mercadoria);
-                }         
+                    var entradas = new Entrada
+                    {
+                        Quantidade = 1,
+                        DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                        Local = "Brazil",
+                        MercadoriaId = mercadoria.Id,
+                    };
 
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                    _context.Add(entradas);
+                    _context.Entradas.Add(entradas);
+
+                    if (!MercadoriaRegistroExists(mercadoria.NumeroRegistro))
+                    {
+                        entradas.Mercadoria = mercadoria;
+                        mercadoria.Ativo = true;
+                        _context.Add(mercadoria);
+                    }
+                    else
+                    {
+                        mercadoria.Ativo = true;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+               
             }
             return View(mercadoria);
         }
@@ -220,11 +315,15 @@ namespace CadastroMercadoria.Controllers
                     DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
                     Local = "Brazil",
                     MercadoriaId = mercadoria.Id,
+                    Mercadoria = mercadoria
                 };
 
-                saida.Mercadoria = mercadoria;
+                mercadoria.Ativo = false;
+                _context.Mercadorias.Update(mercadoria);
 
-                _context.Saidas.Add(saida);                    
+                _context.Add(saida);
+                _context.Saidas.Add(saida);
+                await _context.SaveChangesAsync();
                 //_context.Mercadorias.Remove(mercadoria);
             }
             
