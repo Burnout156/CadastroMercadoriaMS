@@ -166,7 +166,7 @@ namespace CadastroMercadoria.Controllers
 
                 var mercadoriaExiste = await _context.Mercadorias.Where(m => m.NumeroRegistro == mercadoria.NumeroRegistro).ToListAsync();
 
-                if (mercadoriaExiste != null)
+                if (mercadoriaExiste.Count > 0)
                 {
                     var entradas = new Entrada
                     {
