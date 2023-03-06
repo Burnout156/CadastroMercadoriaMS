@@ -13,5 +13,7 @@ namespace CadastroMercadoriaBiblioteca.Models
         public int Quantidade { get; set; }
         public string Local { get; set; }
         public int MercadoriaId { get; set; }
+
+        public Mercadoria Mercadoria { get; set; }
     }
 }

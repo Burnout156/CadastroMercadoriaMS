@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using CadastroMercadoriaBiblioteca.Data;
 using CadastroMercadoriaBiblioteca.Models;
 using System.Data;
+using System.Globalization;
 
 namespace CadastroMercadoria.Controllers
 {
@@ -44,6 +45,50 @@ namespace CadastroMercadoria.Controllers
             return View(mercadoria);
         }
 
+        public IActionResult GetChartData()
+        {
+            var entradas = _context.Entradas
+                .Include(e => e.Mercadoria)
+                .GroupBy(e => new { e.Mercadoria.Nome })
+                .Select(g => new { Mercadoria = g.Key.Nome, Quantidade = g.Sum(e => e.Quantidade) })
+                .ToList();
+
+            var saidas = _context.Saidas
+                .Include(s => s.Mercadoria)
+                .GroupBy(s => new { s.Mercadoria.Nome })
+                .Select(g => new { Mercadoria = g.Key.Nome, Quantidade = g.Sum(s => s.Quantidade) })
+                .ToList();
+
+            var data = new List<ChartDataViewModel>();
+            foreach (var entrada in entradas)
+            {
+                var item = new ChartDataViewModel();
+                item.Label = entrada.Mercadoria;
+                item.Entrada = entrada.Quantidade;
+                data.Add(item);
+            }
+
+            foreach (var saida in saidas)
+            {
+                var item = data.FirstOrDefault(d => d.Label == saida.Mercadoria);
+                if (item != null)
+                {
+                    item.Saida = saida.Quantidade;
+                }
+                else
+                {
+                    item = new ChartDataViewModel();
+                    item.Label = saida.Mercadoria;
+                    item.Saida = saida.Quantidade;
+                    data.Add(item);
+                }
+            }
+
+            return Ok(data);
+        }
+
+
+
         // GET: Estoque/Create
         public IActionResult Create()
         {
@@ -65,15 +110,20 @@ namespace CadastroMercadoria.Controllers
 
                 var entradas = new Entrada
                 {
-
                     Quantidade = 1,
                     DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
                     Local = "Brazil",
                     MercadoriaId = mercadoria.Id,
                 };
 
+                entradas.Mercadoria = mercadoria;
+
                 _context.Add(entradas);
-                _context.Add(mercadoria);
+
+                if (MercadoriaRegistroExists(mercadoria.NumeroRegistro))
+                {
+                    _context.Add(mercadoria);
+                }         
 
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -172,8 +222,10 @@ namespace CadastroMercadoria.Controllers
                     MercadoriaId = mercadoria.Id,
                 };
 
-                _context.Add(saida);                      
-                _context.Mercadorias.Remove(mercadoria);
+                saida.Mercadoria = mercadoria;
+
+                _context.Saidas.Add(saida);                    
+                //_context.Mercadorias.Remove(mercadoria);
             }
             
             await _context.SaveChangesAsync();
@@ -185,6 +237,11 @@ namespace CadastroMercadoria.Controllers
           return _context.Mercadorias.Any(e => e.Id == id);
         }
 
-  
+        private bool MercadoriaRegistroExists(int numRegistro)
+        {
+            return _context.Mercadorias.Any(e => e.NumeroRegistro == numRegistro);
+        }
+
+
     }
 }
