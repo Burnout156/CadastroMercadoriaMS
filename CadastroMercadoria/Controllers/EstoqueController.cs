@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using CadastroMercadoriaBiblioteca.Data;
 using CadastroMercadoriaBiblioteca.Models;
+using System.Data;
 
 namespace CadastroMercadoria.Controllers
 {
@@ -56,9 +57,24 @@ namespace CadastroMercadoria.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Nome,NumeroRegistro,Fabricante,TipoDescricao")] Mercadoria mercadoria)
         {
+
+
             if (ModelState.IsValid)
             {
+                DateTime dataHoraLocal = DateTime.Now;
+
+                var entradas = new Entrada
+                {
+
+                    Quantidade = 1,
+                    DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                    Local = "Brazil",
+                    MercadoriaId = mercadoria.Id,
+                };
+
+                _context.Add(entradas);
                 _context.Add(mercadoria);
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -146,6 +162,17 @@ namespace CadastroMercadoria.Controllers
             var mercadoria = await _context.Mercadorias.FindAsync(id);
             if (mercadoria != null)
             {
+                DateTime dataHoraLocal = DateTime.Now;         
+
+                var saida = new Saida
+                {
+                    Quantidade = 1,
+                    DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                    Local = "Brazil",
+                    MercadoriaId = mercadoria.Id,
+                };
+
+                _context.Add(saida);                      
                 _context.Mercadorias.Remove(mercadoria);
             }
             
@@ -158,36 +185,6 @@ namespace CadastroMercadoria.Controllers
           return _context.Mercadorias.Any(e => e.Id == id);
         }
 
-        // Action para exibir a tela de cadastro de entrada
-        /*public ActionResult CadastroEntrada()
-        {
-            ViewBag.Mercadorias = new SelectList(_context.Mercadorias, "Id", "Nome");
-            return View();
-        }
-
-        // Action para processar o formulário de cadastro de entrada
-        [HttpPost]
-        public ActionResult CadastroEntrada(Entrada entrada)
-        {
-            _context.Entradas.Add(entrada);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
-        }
-
-        // Action para exibir a tela de cadastro de saída
-        public ActionResult CadastroSaida()
-        {
-            ViewBag.Mercadorias = new SelectList(_context.Mercadorias, "Id", "Nome");
-            return View();
-        }
-
-        // Action para processar o formulário de cadastro de saída
-        [HttpPost]
-        public ActionResult CadastroSaida(Saida saida)
-        {
-            _context.Saidas.Add(saida);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
-        }*/
+  
     }
 }
