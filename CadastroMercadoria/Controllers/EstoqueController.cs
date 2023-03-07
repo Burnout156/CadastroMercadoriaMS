@@ -315,7 +315,7 @@ namespace CadastroMercadoria.Controllers
 
                 var saida = new Saida
                 {
-                    Quantidade = 1,
+                    Quantidade = mercadoria.Quantidade,
                     DataHora = dataHoraLocal,
                     Local = "Brazil",
                     MercadoriaId = mercadoria.Id,
