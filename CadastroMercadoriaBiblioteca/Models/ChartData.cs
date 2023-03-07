@@ -11,5 +11,13 @@ namespace CadastroMercadoriaBiblioteca.Models
         public string Label { get; set; }
         public int Entrada { get; set; }
         public int Saida { get; set; }
+        public int[] Entradas { get; set; }
+        public int[] Saidas { get; set; }
+
+        public ChartDataViewModel() 
+        {
+            Entradas = new int[12];
+            Saidas = new int[12];
+        }
     }
 }

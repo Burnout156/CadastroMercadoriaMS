@@ -16,6 +16,9 @@ namespace CadastroMercadoriaBiblioteca.Models
         [StringLength(50, ErrorMessage = "O nome da mercadoria deve ter no máximo 50 caracteres.")]
         public string Nome { get; set; }
 
+        [Required(ErrorMessage = "O quantidade de mercadoria é obrigatório.")]
+        public int Quantidade { get; set; }
+
         [Required(ErrorMessage = "O número de registro é obrigatório.")]
         public int NumeroRegistro { get; set; }
 

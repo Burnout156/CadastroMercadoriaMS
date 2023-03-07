@@ -57,43 +57,45 @@ namespace CadastroMercadoria.Controllers
         {
             var entradas = _context.Entradas
                 .Include(e => e.Mercadoria)
-                .GroupBy(e => new { e.Mercadoria.Nome })
-                .Select(g => new { Mercadoria = g.Key.Nome, Quantidade = g.Sum(e => e.Quantidade) })
+                .GroupBy(e => new { e.Mercadoria.Nome, Mes = e.DataHora.Month })
+                .Select(g => new { Mercadoria = g.Key.Nome, Mes = g.Key.Mes, Quantidade = g.Sum(e => e.Quantidade) })
                 .ToList();
 
             var saidas = _context.Saidas
                 .Include(s => s.Mercadoria)
-                .GroupBy(s => new { s.Mercadoria.Nome })
-                .Select(g => new { Mercadoria = g.Key.Nome, Quantidade = g.Sum(s => s.Quantidade) })
+                .GroupBy(s => new { s.Mercadoria.Nome, Mes = s.DataHora.Month })
+                .Select(g => new { Mercadoria = g.Key.Nome, Mes = g.Key.Mes, Quantidade = g.Sum(s => s.Quantidade) })
                 .ToList();
 
             var data = new List<ChartDataViewModel>();
             foreach (var entrada in entradas)
             {
-                var item = new ChartDataViewModel();
-                item.Label = entrada.Mercadoria;
-                item.Entrada = entrada.Quantidade;
-                data.Add(item);
+                var item = data.FirstOrDefault(d => d.Label == entrada.Mercadoria);
+                if (item == null)
+                {
+                    item = new ChartDataViewModel();
+                    item.Label = entrada.Mercadoria;
+                    data.Add(item);
+                }
+
+                item.Entradas[entrada.Mes - 1] = entrada.Quantidade;
             }
 
             foreach (var saida in saidas)
             {
                 var item = data.FirstOrDefault(d => d.Label == saida.Mercadoria);
-                if (item != null)
-                {
-                    item.Saida = saida.Quantidade;
-                }
-                else
+                if (item == null)
                 {
                     item = new ChartDataViewModel();
                     item.Label = saida.Mercadoria;
-                    item.Saida = saida.Quantidade;
                     data.Add(item);
                 }
+                item.Saidas[saida.Mes - 1] = saida.Quantidade;
             }
 
             return Ok(data);
         }
+
 
 
 
@@ -157,12 +159,13 @@ namespace CadastroMercadoria.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nome,NumeroRegistro,Fabricante,TipoDescricao")] Mercadoria mercadoria)
+        public async Task<IActionResult> Create([Bind("Id,Nome,NumeroRegistro,Quantidade,Fabricante,TipoDescricao")] Mercadoria mercadoria)
         {
 
             if (ModelState.IsValid)
             {
-                DateTime dataHoraLocal = DateTime.Now;
+                TimeZoneInfo brTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+                DateTime dataHoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brTimeZone);
 
                 var mercadoriaExiste = await _context.Mercadorias.Where(m => m.NumeroRegistro == mercadoria.NumeroRegistro).ToListAsync();
 
@@ -170,8 +173,8 @@ namespace CadastroMercadoria.Controllers
                 {
                     var entradas = new Entrada
                     {
-                        Quantidade = 1,
-                        DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                        Quantidade = mercadoria.Quantidade,
+                        DataHora = dataHoraLocal,
                         Local = "Brazil",
                         MercadoriaId = mercadoriaExiste[0].Id,
                     };
@@ -198,8 +201,8 @@ namespace CadastroMercadoria.Controllers
                 {
                     var entradas = new Entrada
                     {
-                        Quantidade = 1,
-                        DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                        Quantidade = mercadoria.Quantidade,
+                        DataHora = dataHoraLocal,
                         Local = "Brazil",
                         MercadoriaId = mercadoria.Id,
                     };
@@ -307,12 +310,13 @@ namespace CadastroMercadoria.Controllers
             var mercadoria = await _context.Mercadorias.FindAsync(id);
             if (mercadoria != null)
             {
-                DateTime dataHoraLocal = DateTime.Now;         
+                TimeZoneInfo brTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+                DateTime dataHoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brTimeZone);
 
                 var saida = new Saida
                 {
                     Quantidade = 1,
-                    DataHora = TimeZoneInfo.ConvertTimeToUtc(dataHoraLocal),
+                    DataHora = dataHoraLocal,
                     Local = "Brazil",
                     MercadoriaId = mercadoria.Id,
                     Mercadoria = mercadoria

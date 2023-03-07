@@ -4,10 +4,10 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>Listagem de Mercadorias Ativas</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">Criar Mercadoria</a>
 </p>
 <table class="table">
     <thead>
@@ -16,13 +16,16 @@
                 @Html.DisplayNameFor(model => model.Nome)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.NumeroRegistro)
+                Numero De Registro
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Quantidade)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.Fabricante)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.TipoDescricao)
+                Descricao
             </th>
             <th></th>
         </tr>
@@ -35,6 +38,9 @@
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.NumeroRegistro)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Quantidade)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Fabricante)
@@ -72,25 +78,27 @@
         fetch('/Estoque/GetChartData')
             .then(response => response.json())
             .then(data => {
-                chartData.labels = data.map(d => d.label);
+                chartData.labels = data[0].entradas.map((e, i) => `Mês ${i + 1}`);
 
-                var entradas = {
-                    label: "Entradas",
-                    data: data.map(d => d.entrada),
-                    backgroundColor: "rgba(54, 162, 235, 0.2)",
-                    borderColor: "rgba(54, 162, 235, 1)",
-                    borderWidth: 1
-                };
+                data.forEach(d => {
+                    var entradas = {
+                        label: `Entradas - ${d.label}`,
+                        data: d.entradas,
+                        backgroundColor: "rgba(54, 162, 235, 0.2)",
+                        borderColor: "rgba(54, 162, 235, 1)",
+                        borderWidth: 1
+                    };
 
-                var saidas = {
-                    label: "Saídas",
-                    data: data.map(d => d.saida),
-                    backgroundColor: "rgba(255, 99, 132, 0.2)",
-                    borderColor: "rgba(255, 99, 132, 1)",
-                    borderWidth: 1
-                };
+                    var saidas = {
+                        label: `Saídas - ${d.label}`,
+                        data: d.saidas,
+                        backgroundColor: "rgba(255, 99, 132, 0.2)",
+                        borderColor: "rgba(255, 99, 132, 1)",
+                        borderWidth: 1
+                    };
 
-                chartData.datasets.push(entradas, saidas);
+                    chartData.datasets.push(entradas, saidas);
+                });
 
                 var myChart = new Chart(ctx, {
                     type: 'bar',
@@ -106,4 +114,4 @@
             });
     </script>
 }
-}
+

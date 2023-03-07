@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CadastroMercadoriaBiblioteca.Migrations
 {
     [DbContext(typeof(MercadoriaDbContext))]
-    [Migration("20230306133316_migracao1")]
-    partial class migracao1
+    [Migration("20230306203629_mig1")]
+    partial class mig1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -59,6 +59,9 @@ namespace CadastroMercadoriaBiblioteca.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Fabricante")
                         .IsRequired()

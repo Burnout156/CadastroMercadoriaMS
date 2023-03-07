@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace CadastroMercadoriaBiblioteca.Migrations
 {
-    public partial class migracao1 : Migration
+    public partial class mig1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -18,7 +18,8 @@ namespace CadastroMercadoriaBiblioteca.Migrations
                     Nome = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     NumeroRegistro = table.Column<int>(type: "int", nullable: false),
                     Fabricante = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TipoDescricao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    TipoDescricao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Ativo = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
