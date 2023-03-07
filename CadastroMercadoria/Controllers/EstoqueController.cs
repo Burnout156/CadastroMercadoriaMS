@@ -301,7 +301,7 @@ namespace CadastroMercadoria.Controllers
         // POST: Estoque/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, [Bind("Quantidade")] Mercadoria mercadoriaQuantidade)
         {
             if (_context.Mercadorias == null)
             {
@@ -315,7 +315,7 @@ namespace CadastroMercadoria.Controllers
 
                 var saida = new Saida
                 {
-                    Quantidade = mercadoria.Quantidade,
+                    Quantidade = mercadoriaQuantidade.Quantidade,
                     DataHora = dataHoraLocal,
                     Local = "Brazil",
                     MercadoriaId = mercadoria.Id,
