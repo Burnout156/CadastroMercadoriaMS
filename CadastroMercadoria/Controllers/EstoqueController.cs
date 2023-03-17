@@ -19,10 +19,12 @@ namespace CadastroMercadoria.Controllers
     public class EstoqueController : Controller
     {
         private readonly MercadoriaDbContext _context;
+        private EntradaController entradaController;
 
         public EstoqueController(MercadoriaDbContext context)
         {
             _context = context;
+            entradaController = new EntradaController(context);
         }
 
         // GET: Estoque
@@ -96,9 +98,6 @@ namespace CadastroMercadoria.Controllers
             return Ok(data);
         }
 
-
-
-
         // GET: Estoque/Create
         public IActionResult Create()
         {
@@ -159,69 +158,48 @@ namespace CadastroMercadoria.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nome,NumeroRegistro,Quantidade,Fabricante,TipoDescricao")] Mercadoria mercadoria)
+        public async Task<ActionResult> CreateAsync(Mercadoria mercadoria)
         {
-
             if (ModelState.IsValid)
             {
                 TimeZoneInfo brTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
                 DateTime dataHoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brTimeZone);
 
-                var mercadoriaExiste = await _context.Mercadorias.Where(m => m.NumeroRegistro == mercadoria.NumeroRegistro).ToListAsync();
+                var mercadoriaExiste = _context.Mercadorias.Where(m => m.NumeroRegistro == mercadoria.NumeroRegistro).ToList();
 
                 if (mercadoriaExiste.Count > 0)
-                {
-                    var entradas = new Entrada
-                    {
-                        Quantidade = mercadoria.Quantidade,
-                        DataHora = dataHoraLocal,
-                        Local = "Brazil",
-                        MercadoriaId = mercadoriaExiste[0].Id,
-                    };
-
-                    _context.Add(entradas);
-                    _context.Entradas.Add(entradas);
-
+                {                   
                     if (!MercadoriaRegistroExists(mercadoria.NumeroRegistro))
                     {
-                        entradas.Mercadoria = mercadoria;
-                        mercadoria.Ativo = true;
+                        mercadoria.Ativo = true;                     
                         _context.Add(mercadoria);
+                        await entradaController.CriarEntradaMercadoriaExistente(mercadoria);
                     }
+
                     else
                     {
                         mercadoria.Ativo = true;
                     }
 
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
+                   return RedirectToAction(nameof(Index));
                 }
 
                 else
                 {
-                    var entradas = new Entrada
-                    {
-                        Quantidade = mercadoria.Quantidade,
-                        DataHora = dataHoraLocal,
-                        Local = "Brazil",
-                        MercadoriaId = mercadoria.Id,
-                    };
-
-                    _context.Add(entradas);
-                    _context.Entradas.Add(entradas);
 
                     if (!MercadoriaRegistroExists(mercadoria.NumeroRegistro))
                     {
-                        entradas.Mercadoria = mercadoria;
                         mercadoria.Ativo = true;
                         _context.Add(mercadoria);
+                        await entradaController.CriarEntradaMercadoriaNova(mercadoria);
                     }
+
                     else
                     {
                         mercadoria.Ativo = true;
                     }
 
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     return RedirectToAction(nameof(Index));
                 }
                
@@ -322,7 +300,13 @@ namespace CadastroMercadoria.Controllers
                     Mercadoria = mercadoria
                 };
 
-                mercadoria.Ativo = false;
+                mercadoria.Ativo = false; 
+                //consertar o erro de lógica
+                /* if(mercadoria.Quantidade < 1)
+                 * {
+                 *      mercadoria.Ativo = false;
+                 * }
+                 */
                 _context.Mercadorias.Update(mercadoria);
 
                 _context.Add(saida);
