@@ -191,7 +191,7 @@ namespace CadastroMercadoria.Controllers
                     {
                         mercadoria.Ativo = true;
                         _context.Add(mercadoria);
-                        await entradaController.CriarEntradaMercadoriaNova(mercadoria);
+                        entradaController.CriarEntradaMercadoriaNova(mercadoria);
                     }
 
                     else
@@ -199,7 +199,7 @@ namespace CadastroMercadoria.Controllers
                         mercadoria.Ativo = true;
                     }
 
-                    _context.SaveChanges();
+                    await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
                

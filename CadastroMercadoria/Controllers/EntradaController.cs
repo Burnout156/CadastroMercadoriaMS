@@ -36,7 +36,7 @@ namespace CadastroMercadoria.Controllers
         // POST: EntradaController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CriarEntradaMercadoriaNova
+        public IActionResult CriarEntradaMercadoriaNova
             ([Bind("Id,Nome,NumeroRegistro,Quantidade,Fabricante,TipoDescricao")] Mercadoria mercadoria)
         {
             TimeZoneInfo brTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
