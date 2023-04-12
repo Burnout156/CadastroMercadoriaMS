@@ -1,0 +1,5 @@
+steps:
+  - name: Cleanup Code
+    uses: ArturWincenciak/ReSharper_CleanupCode@v2.0
+    with:
+      solution: 'ReSharperCleanupCodeDemo.sln'
