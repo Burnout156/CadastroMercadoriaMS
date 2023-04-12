@@ -17,7 +17,7 @@ jobs:
           dotnet-version: 7.0.x
 
       - name: Restore Dependencies
-        run: dotnet restore CadastroMercadoria.sln
+        run: dotnet restore ./CadastroMercadoria/CadastroMercadoria.sln
           
       - name: Cleanup Code
         id: cleanup
