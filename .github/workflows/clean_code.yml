@@ -1,5 +1,12 @@
-steps:
-  - name: Cleanup Code
-    uses: ArturWincenciak/ReSharper_CleanupCode@v2.0
-    with:
-      solution: 'ReSharperCleanupCodeDemo.sln'
+name: ReSharper CLI CleanupCode
+
+on: [ push ]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    name: Cleanup Code
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
